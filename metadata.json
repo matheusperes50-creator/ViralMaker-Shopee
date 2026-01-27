@@ -1,0 +1,7 @@
+{
+  "name": "Shopee Viral Maker",
+  "description": "Crie vídeos virais para a Shopee instantaneamente. Use IA para analisar seu produto e gerar um anúncio em vídeo de alta conversão sem custo de API paga.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
