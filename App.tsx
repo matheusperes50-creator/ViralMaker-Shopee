@@ -4,7 +4,7 @@ import { GenerationStatus } from './types';
 import { generateStagedImages, StagingConfig } from './services/geminiService';
 
 const ENVIRONMENTS = [
-  { id: 'auto', label: 'Automático', desc: 'IA escolhe', icon: 'fa-robot' },
+  { id: 'auto', label: 'Automático', desc: 'IA inteligente', icon: 'fa-robot' },
   { id: 'luxury_living', label: 'Sala Luxo', desc: 'Sofisticado', icon: 'fa-couch' },
   { id: 'minimal_studio', label: 'Estúdio', desc: 'Clean', icon: 'fa-camera-retro' },
   { id: 'nature_zen', label: 'Zen', desc: 'Natural', icon: 'fa-leaf' },
@@ -32,6 +32,7 @@ const App: React.FC = () => {
         setSourceImage(reader.result as string);
         setResultImages([]);
         setResultVideo(null);
+        setError(null);
       };
       reader.readAsDataURL(file);
     }
@@ -47,8 +48,8 @@ const App: React.FC = () => {
       
       const config: StagingConfig = {
         environment: selectedEnv.label,
-        lighting: "Suave e Direcionada",
-        style: "Fotografia de Produto Profissional"
+        lighting: "Cinematográfica Suave",
+        style: "Fotografia Publicitária 8k"
       };
       
       const results = await generateStagedImages(sourceImage, config);
@@ -56,8 +57,8 @@ const App: React.FC = () => {
       setSelectedIndex(0);
       setStatus(GenerationStatus.SUCCESS);
     } catch (err: any) {
-      console.error(err);
-      setError("Erro ao gerar imagens. Verifique se o produto está visível na foto.");
+      console.error("Image generation failed:", err);
+      setError("Falha na conexão com o motor de IA. Tente novamente em instantes.");
       setStatus(GenerationStatus.ERROR);
     }
   };
@@ -69,264 +70,315 @@ const App: React.FC = () => {
     setIsProcessingVideo(true);
     setStatus(GenerationStatus.GENERATING_VIDEO);
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    try {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error("Canvas context error");
 
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = imageToUse;
-    await new Promise((resolve) => (img.onload = resolve));
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageToUse;
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error("Image load error"));
+      });
 
-    // Shopee format (9:16)
-    const width = 720;
-    const height = 1280;
-    canvas.width = width;
-    canvas.height = height;
+      // Formato Vertical Shopee (9:16)
+      const width = 720;
+      const height = 1280;
+      canvas.width = width;
+      canvas.height = height;
 
-    const stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-    const chunks: Blob[] = [];
+      const stream = canvas.captureStream(30);
+      
+      // Browser compatibility for Video MIME types
+      const possibleTypes = ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'];
+      const mimeType = possibleTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+      
+      const recorder = new MediaRecorder(stream, { mimeType });
+      const chunks: Blob[] = [];
 
-    recorder.ondataavailable = (e) => chunks.push(e.data);
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      setResultVideo(URL.createObjectURL(blob));
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        setResultVideo(URL.createObjectURL(blob));
+        setIsProcessingVideo(false);
+        setStatus(GenerationStatus.SUCCESS);
+      };
+
+      recorder.start();
+
+      const duration = 6000; // 6 segundos de luxo
+      const startTime = performance.now();
+
+      const renderFrame = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Efeito Ken Burns: Zoom in lento e sutil
+        const scale = 1.0 + (progress * 0.12); 
+        
+        ctx.fillStyle = '#050608';
+        ctx.fillRect(0, 0, width, height);
+
+        const drawWidth = width * scale;
+        const drawHeight = (width / (img.width / img.height)) * scale;
+        const x = (width - drawWidth) / 2;
+        const y = (height - drawHeight) / 2;
+
+        ctx.drawImage(img, x, y, drawWidth, drawHeight);
+
+        // Overlay cinematográfico (vinheta e gradiente de branding)
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, 'rgba(0,0,0,0.3)');
+        gradient.addColorStop(0.3, 'rgba(0,0,0,0)');
+        gradient.addColorStop(0.7, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(238,77,45,0.15)'); // Shopee Orange glow at bottom
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        if (progress < 1) {
+          requestAnimationFrame(renderFrame);
+        } else {
+          recorder.stop();
+        }
+      };
+
+      requestAnimationFrame(renderFrame);
+    } catch (err) {
+      console.error("Video rendering error:", err);
+      setError("Erro ao renderizar vídeo no navegador.");
       setIsProcessingVideo(false);
-      setStatus(GenerationStatus.SUCCESS);
-    };
-
-    recorder.start();
-
-    const duration = 5000; // 5 seconds
-    const start = performance.now();
-
-    const renderFrame = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Ken Burns: Slow zoom in
-      const scale = 1 + (progress * 0.2); // zoom from 100% to 120%
-      
-      ctx.fillStyle = '#0f1117';
-      ctx.fillRect(0, 0, width, height);
-
-      // Center image and apply zoom
-      const drawWidth = width * scale;
-      const drawHeight = (width / (img.width / img.height)) * scale;
-      const x = (width - drawWidth) / 2;
-      const y = (height - drawHeight) / 2;
-
-      ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-      // Add a subtle vignette or overlay for professional look
-      const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, height/1.5);
-      gradient.addColorStop(0, 'rgba(0,0,0,0)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
-      if (progress < 1) {
-        requestAnimationFrame(renderFrame);
-      } else {
-        recorder.stop();
-      }
-    };
-
-    requestAnimationFrame(renderFrame);
+      setStatus(GenerationStatus.ERROR);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white font-sans selection:bg-orange-500/30 overflow-x-hidden">
-      <header className="border-b border-white/5 bg-[#050608]/90 backdrop-blur-lg sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg shadow-orange-600/20">
-              <i className="fas fa-bolt text-xs"></i>
+    <div className="min-h-screen bg-[#050608] text-white flex flex-col font-sans selection:bg-orange-500/30 overflow-x-hidden">
+      {/* Header Premium */}
+      <header className="border-b border-white/5 bg-[#050608]/90 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20">
+              <i className="fas fa-play text-xs text-white"></i>
             </div>
-            <h1 className="text-lg font-black tracking-tight">Viral<span className="text-orange-500 italic">Maker</span></h1>
+            <h1 className="text-xl font-black tracking-tighter uppercase">
+              Shopee<span className="text-orange-500 italic">Viral</span>
+            </h1>
           </div>
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full border border-white/5">
-            IA Shopee
-          </span>
+          <div className="hidden sm:flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">IA Engine v2.5</span>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 flex flex-col gap-5">
+      <main className="max-w-5xl mx-auto p-6 w-full flex flex-col gap-6">
         
-        {/* Superior: Upload e Estilo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Upload de Imagem */}
-          <section className="bg-[#0f1117] p-4 rounded-2xl border border-white/5 flex items-center gap-4 hover:border-white/10 transition-colors">
-            <div className="w-20 h-20 shrink-0">
-              {sourceImage ? (
-                <div className="relative w-full h-full rounded-xl overflow-hidden border border-orange-500/30">
-                  <img src={sourceImage} className="w-full h-full object-cover" alt="Produto" />
-                  <button 
-                    onClick={() => { setSourceImage(null); setResultImages([]); setResultVideo(null); }} 
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-[10px] shadow-lg"
-                  >
-                    <i className="fas fa-times"></i>
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-full rounded-xl border-2 border-dashed border-white/10 bg-black/20 hover:border-orange-500/50 cursor-pointer transition-all">
-                  <i className="fas fa-plus text-gray-600 text-lg"></i>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                </label>
-              )}
-            </div>
-            <div className="flex-1">
-              <h2 className="text-[10px] font-black uppercase text-gray-500 mb-1 tracking-widest">1. Envie seu Produto</h2>
-              <p className="text-[11px] text-gray-400 leading-tight">Carregue a foto original para que a IA processe o cenário.</p>
-            </div>
-          </section>
-
-          {/* Escolha do Estilo */}
-          <section className="bg-[#0f1117] p-4 rounded-2xl border border-white/5">
-            <h2 className="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest">2. Estilo do Cenário</h2>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {ENVIRONMENTS.map((env) => (
-                <button
-                  key={env.id}
-                  onClick={() => setSelectedEnv(env)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-xl border text-[11px] font-bold transition-all flex items-center gap-2 ${
-                    selectedEnv.id === env.id 
-                    ? 'bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20' 
-                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  <i className={`fas ${env.icon} text-[10px]`}></i> {env.label}
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Ação Principal */}
-        <button
-          onClick={handleGenerateImages}
-          disabled={!sourceImage || status === GenerationStatus.GENERATING_IMAGE}
-          className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-2xl ${
-            !sourceImage || status === GenerationStatus.GENERATING_IMAGE
-            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-            : 'bg-white text-black hover:bg-orange-500 hover:text-white transform active:scale-[0.98]'
-          }`}
-        >
-          {status === GenerationStatus.GENERATING_IMAGE ? (
-            <span className="flex items-center justify-center gap-2">
-              <i className="fas fa-circle-notch fa-spin"></i> GERANDO SEU ANÚNCIO...
-            </span>
-          ) : "CRIAR ANÚNCIO DE ALTA CONVERSÃO"}
-        </button>
-
-        {/* Visualização de Resultados */}
-        <div className="bg-[#0f1117] rounded-3xl border border-white/5 min-h-[500px] flex flex-col relative overflow-hidden shadow-inner">
-          <div className="flex-1 flex flex-col items-center justify-center p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Coluna de Controles (Esquerda) */}
+          <div className="lg:col-span-4 flex flex-col gap-4">
             
-            {resultVideo ? (
-              <div className="w-full max-w-[300px] aspect-[9/16] relative animate-in fade-in zoom-in duration-500">
-                <video src={resultVideo} controls autoPlay loop className="w-full h-full rounded-2xl shadow-2xl border border-white/10 object-cover" />
-                <button 
-                  onClick={() => setResultVideo(null)} 
-                  className="absolute top-4 right-4 w-10 h-10 bg-black/60 backdrop-blur-md rounded-full text-xs flex items-center justify-center shadow-xl hover:bg-red-600 transition-colors"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-                <div className="absolute top-4 left-4">
-                  <span className="bg-orange-500 text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Vídeo Gerado</span>
-                </div>
-              </div>
-            ) : resultImages.length > 0 ? (
-              <div className="w-full flex flex-col items-center gap-6">
-                <div className="relative w-full max-w-sm group">
-                  <img src={resultImages[selectedIndex]} className="w-full h-auto rounded-2xl shadow-2xl border border-white/10 transition-transform duration-500" alt="Resultado" />
-                  
-                  {/* Botão de vídeo overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[1px] rounded-2xl">
+            {/* 1. Upload Section */}
+            <section className="bg-[#0f1117] p-5 rounded-3xl border border-white/5">
+              <h2 className="text-[10px] font-black uppercase text-gray-500 mb-4 tracking-widest flex items-center gap-2">
+                <i className="fas fa-camera text-orange-500"></i> 1. Foto do Produto
+              </h2>
+              <div className="relative group">
+                {sourceImage ? (
+                  <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-orange-500/30">
+                    <img src={sourceImage} className="w-full h-full object-cover" alt="Upload" />
                     <button 
-                      onClick={createCinematicVideo}
-                      className="bg-orange-600 text-white px-8 py-4 rounded-full font-black text-[11px] flex items-center gap-3 shadow-2xl transform transition hover:scale-105"
+                      onClick={() => { setSourceImage(null); setResultImages([]); setResultVideo(null); }} 
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-xs shadow-2xl hover:scale-110 transition-transform"
                     >
-                      <i className="fas fa-play"></i> GERAR VÍDEO CINEMÁTICO
+                      <i className="fas fa-times"></i>
                     </button>
                   </div>
-
-                  <div className="absolute bottom-4 right-4 flex gap-2">
-                    <a 
-                      href={resultImages[selectedIndex]} 
-                      download={`shopee-viral-${selectedIndex}.png`}
-                      className="w-12 h-12 bg-white text-black rounded-xl flex items-center justify-center shadow-2xl hover:bg-orange-600 hover:text-white transition-all"
-                    >
-                      <i className="fas fa-download"></i>
-                    </a>
-                  </div>
-                </div>
-
-                {/* Seleção de Variantes */}
-                <div className="flex gap-3 overflow-x-auto w-full justify-center pb-2">
-                  {resultImages.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => { setSelectedIndex(idx); setResultVideo(null); }}
-                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${selectedIndex === idx ? 'border-orange-500 scale-110 shadow-lg' : 'border-transparent opacity-40 hover:opacity-100'}`}
-                    >
-                      <img src={img} className="w-full h-full object-cover" alt={`Variante ${idx}`} />
-                    </button>
-                  ))}
-                </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.02] hover:border-orange-500/50 hover:bg-white/[0.04] cursor-pointer transition-all">
+                    <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                      <i className="fas fa-upload text-gray-500"></i>
+                    </div>
+                    <span className="text-xs font-bold text-gray-500">Carregar Imagem</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </label>
+                )}
               </div>
-            ) : (
-              <div className="text-center py-20">
-                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <i className="fas fa-wand-magic-sparkles text-3xl text-gray-700"></i>
-                </div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-600 mb-2">Aguardando Produto</h3>
-                <p className="text-[11px] text-gray-500 max-w-[220px] mx-auto leading-relaxed">
-                  Envie uma foto clara e escolha um estilo para ver a mágica acontecer instantaneamente.
-                </p>
+            </section>
+
+            {/* 2. Style Selector */}
+            <section className="bg-[#0f1117] p-5 rounded-3xl border border-white/5">
+              <h2 className="text-[10px] font-black uppercase text-gray-500 mb-4 tracking-widest flex items-center gap-2">
+                <i className="fas fa-magic text-orange-500"></i> 2. Estilo
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {ENVIRONMENTS.map((env) => (
+                  <button
+                    key={env.id}
+                    onClick={() => setSelectedEnv(env)}
+                    className={`p-3 rounded-2xl border text-[11px] font-bold transition-all flex flex-col items-center gap-2 ${
+                      selectedEnv.id === env.id 
+                      ? 'bg-orange-600 border-orange-600 text-white shadow-lg' 
+                      : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <i className={`fas ${env.icon} text-sm`}></i>
+                    {env.label}
+                  </button>
+                ))}
               </div>
-            )}
+            </section>
+
+            <button
+              onClick={handleGenerateImages}
+              disabled={!sourceImage || status === GenerationStatus.GENERATING_IMAGE}
+              className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-2xl ${
+                !sourceImage || status === GenerationStatus.GENERATING_IMAGE
+                ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-orange-500 hover:text-white transform active:scale-95'
+              }`}
+            >
+              {status === GenerationStatus.GENERATING_IMAGE ? (
+                <span className="flex items-center justify-center gap-3">
+                  <i className="fas fa-circle-notch fa-spin"></i> Criando Cenários...
+                </span>
+              ) : "Gerar Anúncio IA"}
+            </button>
           </div>
 
-          {/* Ação Mobile de Vídeo */}
-          {resultImages.length > 0 && !resultVideo && (
-            <div className="p-4 pt-0">
-              <button 
-                onClick={createCinematicVideo}
-                disabled={isProcessingVideo}
-                className={`w-full bg-orange-600 text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all ${isProcessingVideo ? 'opacity-50 cursor-wait' : 'hover:bg-orange-700 active:scale-95'}`}
-              >
-                {isProcessingVideo ? (
-                  <><i className="fas fa-circle-notch fa-spin"></i> PROCESSANDO VÍDEO...</>
+          {/* Coluna de Visualização (Direita) */}
+          <div className="lg:col-span-8">
+            <div className="bg-[#0f1117] rounded-[2.5rem] border border-white/5 h-full min-h-[600px] flex flex-col overflow-hidden relative shadow-2xl">
+              
+              <div className="flex-1 flex flex-col items-center justify-center p-8">
+                {resultVideo ? (
+                  <div className="w-full max-w-[320px] aspect-[9/16] relative animate-in fade-in zoom-in duration-700">
+                    <video 
+                      src={resultVideo} 
+                      controls 
+                      autoPlay 
+                      loop 
+                      className="w-full h-full rounded-3xl shadow-[0_0_50px_rgba(238,77,45,0.2)] border border-white/10 object-cover" 
+                    />
+                    <button 
+                      onClick={() => setResultVideo(null)} 
+                      className="absolute -top-4 -right-4 w-12 h-12 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full text-sm flex items-center justify-center shadow-2xl hover:bg-red-600 transition-colors"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-orange-600 text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg border border-orange-500">Vídeo Viral Gerado</span>
+                    </div>
+                  </div>
+                ) : resultImages.length > 0 ? (
+                  <div className="w-full flex flex-col items-center gap-8">
+                    <div className="relative w-full max-w-[450px] group">
+                      <img 
+                        src={resultImages[selectedIndex]} 
+                        className="w-full h-auto rounded-[2rem] shadow-2xl border border-white/10 transition-transform duration-700" 
+                        alt="Preview" 
+                      />
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-[2px] rounded-[2rem]">
+                        <button 
+                          onClick={createCinematicVideo}
+                          className="bg-orange-600 text-white px-10 py-5 rounded-full font-black text-[11px] flex items-center gap-3 shadow-2xl transform transition hover:scale-105"
+                        >
+                          <i className="fas fa-play"></i> GERAR VÍDEO CINEMÁTICO 9:16
+                        </button>
+                      </div>
+
+                      <div className="absolute bottom-6 right-6 flex gap-3">
+                        <a 
+                          href={resultImages[selectedIndex]} 
+                          download={`shopee-viral-${selectedIndex}.png`}
+                          className="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center shadow-2xl hover:bg-orange-600 hover:text-white transition-all transform hover:-translate-y-1"
+                        >
+                          <i className="fas fa-download text-lg"></i>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Selector Dots/Thumbs */}
+                    <div className="flex gap-4 p-2 bg-black/20 rounded-3xl border border-white/5">
+                      {resultImages.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => { setSelectedIndex(idx); setResultVideo(null); }}
+                          className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${selectedIndex === idx ? 'border-orange-500 scale-105 shadow-lg' : 'border-transparent opacity-30 hover:opacity-100'}`}
+                        >
+                          <img src={img} className="w-full h-full object-cover" alt={`Variant ${idx}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
-                  <><i className="fas fa-video"></i> TRANSFORMAR EM VÍDEO 9:16</>
+                  <div className="text-center py-20 animate-pulse">
+                    <div className="w-24 h-24 bg-white/[0.03] rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-white/5">
+                      <i className="fas fa-sparkles text-4xl text-gray-800"></i>
+                    </div>
+                    <h3 className="text-lg font-black uppercase tracking-[0.2em] text-gray-600 mb-3">Estúdio IA</h3>
+                    <p className="text-sm text-gray-500 max-w-[280px] mx-auto leading-relaxed">
+                      Sua vitrine virtual premium começa aqui. Envie uma foto do produto para iniciar a mágica.
+                    </p>
+                  </div>
                 )}
-              </button>
+              </div>
+
+              {/* Ação Mobile Inferior */}
+              {resultImages.length > 0 && !resultVideo && (
+                <div className="p-6 bg-[#12141c] border-t border-white/5">
+                  <button 
+                    onClick={createCinematicVideo}
+                    disabled={isProcessingVideo}
+                    className={`w-full bg-orange-600 text-white font-black py-5 rounded-[1.5rem] text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all ${isProcessingVideo ? 'opacity-50 cursor-wait' : 'hover:bg-orange-700 active:scale-95'}`}
+                  >
+                    {isProcessingVideo ? (
+                      <><i className="fas fa-circle-notch fa-spin"></i> RENDERIZANDO VÍDEO...</>
+                    ) : (
+                      <><i className="fas fa-video"></i> TRANSFORMAR EM VÍDEO PARA SHOPEE</>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Hidden canvas for video processing */}
+        {/* Hidden rendering tools */}
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-center text-[11px] font-bold text-red-500 animate-in slide-in-from-bottom duration-300">
-            <i className="fas fa-exclamation-triangle mr-2"></i> {error}
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-red-500 text-white px-8 py-4 rounded-full font-bold text-sm shadow-2xl animate-in slide-in-from-bottom duration-500">
+            <i className="fas fa-exclamation-triangle mr-3"></i> {error}
           </div>
         )}
       </main>
 
-      <footer className="p-10 text-center opacity-20 mt-auto">
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-1">Shopee Viral Maker &copy; 2025</p>
-        <p className="text-[9px] font-medium">Powered by Gemini 2.5 Flash Engine</p>
+      <footer className="mt-auto py-12 px-6 border-t border-white/5 bg-[#050608]">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 opacity-30">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Shopee Viral Studio &copy; 2025</span>
+          </div>
+          <div className="flex gap-8 text-[9px] font-bold uppercase tracking-widest">
+            <span className="hover:text-orange-500 cursor-pointer">Segurança IA</span>
+            <span className="hover:text-orange-500 cursor-pointer">Qualidade 8K</span>
+            <span className="hover:text-orange-500 cursor-pointer">Termos</span>
+          </div>
+        </div>
       </footer>
 
       <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .animate-in { animation: fade-in 0.5s ease-out; }
+        @keyframes zoom-in { from { transform: scale(0.9); } to { transform: scale(1); } }
+        .animate-in { animation: fade-in 0.5s ease-out, zoom-in 0.5s ease-out; }
       `}</style>
     </div>
   );
