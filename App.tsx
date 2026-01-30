@@ -52,14 +52,13 @@ const App: React.FC = () => {
       setStatus(GenerationStatus.SUCCESS);
     } catch (err: any) {
       console.error("Image generation failed:", err);
-      setError("Erro ao processar imagem. Verifique se a sua chave de API está configurada corretamente.");
+      setError("Não foi possível processar a imagem no momento. Tente novamente em instantes.");
       setStatus(GenerationStatus.ERROR);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#050608] text-white flex flex-col font-sans selection:bg-orange-500/30">
-      {/* Header Premium */}
       <header className="border-b border-white/5 bg-[#050608]/95 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -72,15 +71,13 @@ const App: React.FC = () => {
           </div>
           <div className="hidden sm:flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Estúdio Ativo</span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Motor IA Conectado</span>
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto p-6 w-full flex flex-col gap-6">
-        
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Controles */}
           <div className="lg:col-span-4 flex flex-col gap-4">
             <section className="bg-[#0f1117] p-5 rounded-3xl border border-white/5">
               <h2 className="text-[10px] font-black uppercase text-gray-500 mb-4 tracking-widest flex items-center gap-2">
@@ -102,7 +99,7 @@ const App: React.FC = () => {
                     <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <i className="fas fa-cloud-arrow-up text-gray-500 group-hover:text-orange-500"></i>
                     </div>
-                    <span className="text-xs font-bold text-gray-500">Selecionar Imagem</span>
+                    <span className="text-xs font-bold text-gray-500">Carregar Imagem</span>
                     <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                   </label>
                 )}
@@ -142,13 +139,12 @@ const App: React.FC = () => {
             >
               {status === GenerationStatus.GENERATING_IMAGE ? (
                 <span className="flex items-center justify-center gap-3">
-                  <i className="fas fa-circle-notch fa-spin"></i> Processando...
+                  <i className="fas fa-circle-notch fa-spin"></i> Criando Cenário...
                 </span>
-              ) : "Gerar Fotos de Catálogo"}
+              ) : "Gerar Fotos de Venda"}
             </button>
           </div>
 
-          {/* Preview */}
           <div className="lg:col-span-8">
             <div className="bg-[#0f1117] rounded-[2.5rem] border border-white/5 h-full min-h-[550px] flex flex-col overflow-hidden relative shadow-2xl">
               <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -188,9 +184,9 @@ const App: React.FC = () => {
                     <div className="w-24 h-24 bg-white/[0.03] rounded-[2.5rem] flex items-center justify-center mb-8 border border-white/5 shadow-inner">
                       <i className="fas fa-magic text-4xl text-gray-800"></i>
                     </div>
-                    <h3 className="text-lg font-black uppercase tracking-[0.2em] text-gray-700 mb-3">Estúdio Fotográfico IA</h3>
+                    <h3 className="text-lg font-black uppercase tracking-[0.2em] text-gray-700 mb-3">Gerador Viral Shopee</h3>
                     <p className="text-sm text-gray-500 max-w-[300px] mx-auto leading-relaxed">
-                      Carregue uma imagem do seu produto e veja a IA criar um cenário profissional digno de grandes marcas.
+                      Carregue a foto do seu produto e deixe nossa IA criar fotos profissionais prontas para vender.
                     </p>
                   </div>
                 )}
@@ -224,8 +220,8 @@ const App: React.FC = () => {
             <span className="text-[10px] font-black uppercase tracking-[0.4em]">ViralMaker IA &copy; 2025</span>
           </div>
           <div className="flex gap-8 text-[9px] font-black uppercase tracking-widest">
-            <span className="hover:text-orange-500 cursor-default">Qualidade Ultra HD</span>
-            <span className="hover:text-orange-500 cursor-default">Processamento em Nuvem</span>
+            <span>Processamento Instantâneo</span>
+            <span>Qualidade Profissional</span>
           </div>
         </div>
       </footer>
