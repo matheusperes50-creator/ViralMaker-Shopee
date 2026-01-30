@@ -22,6 +22,10 @@ const App: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 4 * 1024 * 1024) {
+        setError("Imagem muito grande. Use fotos de até 4MB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setSourceImage(reader.result as string);
@@ -43,7 +47,7 @@ const App: React.FC = () => {
       const config: StagingConfig = {
         environment: selectedEnv.label,
         lighting: "Cinematográfica Suave",
-        style: "Fotografia Publicitária 8k de Alto Padrão para Marketplace"
+        style: "Fotografia Publicitária 8k de Alto Padrão"
       };
       
       const results = await generateStagedImages(sourceImage, config);
@@ -51,8 +55,10 @@ const App: React.FC = () => {
       setSelectedIndex(0);
       setStatus(GenerationStatus.SUCCESS);
     } catch (err: any) {
-      console.error("Image generation failed:", err);
-      setError("Não foi possível processar a imagem no momento. Tente novamente em instantes.");
+      console.error("Falha na geração:", err);
+      let msg = "Não foi possível processar. Tente novamente.";
+      if (err.message === "API_KEY_MISSING") msg = "Erro de Configuração: Chave de API não encontrada.";
+      setError(msg);
       setStatus(GenerationStatus.ERROR);
     }
   };
@@ -69,9 +75,9 @@ const App: React.FC = () => {
               Shopee<span className="text-orange-500 italic">Viral</span>
             </h1>
           </div>
-          <div className="hidden sm:flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Motor IA Conectado</span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">IA Ativa</span>
           </div>
         </div>
       </header>
@@ -99,7 +105,7 @@ const App: React.FC = () => {
                     <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <i className="fas fa-cloud-arrow-up text-gray-500 group-hover:text-orange-500"></i>
                     </div>
-                    <span className="text-xs font-bold text-gray-500">Carregar Imagem</span>
+                    <span className="text-xs font-bold text-gray-500">Subir Foto</span>
                     <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                   </label>
                 )}
@@ -108,7 +114,7 @@ const App: React.FC = () => {
 
             <section className="bg-[#0f1117] p-5 rounded-3xl border border-white/5">
               <h2 className="text-[10px] font-black uppercase text-gray-500 mb-4 tracking-widest flex items-center gap-2">
-                <i className="fas fa-wand-sparkles text-orange-500"></i> 2. Escolher Cenário
+                <i className="fas fa-wand-sparkles text-orange-500"></i> 2. Cenário IA
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {ENVIRONMENTS.map((env) => (
@@ -139,9 +145,9 @@ const App: React.FC = () => {
             >
               {status === GenerationStatus.GENERATING_IMAGE ? (
                 <span className="flex items-center justify-center gap-3">
-                  <i className="fas fa-circle-notch fa-spin"></i> Criando Cenário...
+                  <i className="fas fa-circle-notch fa-spin"></i> Criando Arte...
                 </span>
-              ) : "Gerar Fotos de Venda"}
+              ) : "Transformar Foto"}
             </button>
           </div>
 
@@ -153,40 +159,22 @@ const App: React.FC = () => {
                     <div className="relative w-full max-w-[450px] group">
                       <img 
                         src={resultImages[selectedIndex]} 
-                        className="w-full h-auto rounded-[2rem] shadow-2xl border border-white/10 transition-all duration-500" 
+                        className="w-full h-auto rounded-[2rem] shadow-2xl border border-white/10" 
                         alt="Resultado" 
                       />
-                      <div className="absolute bottom-6 right-6 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a 
-                          href={resultImages[selectedIndex]} 
-                          download={`shopee-studio-${selectedIndex}.png`}
-                          className="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center shadow-2xl hover:bg-orange-600 hover:text-white transition-all transform hover:-translate-y-1"
-                        >
-                          <i className="fas fa-download text-lg"></i>
-                        </a>
-                      </div>
                     </div>
-
-                    <div className="flex gap-4 p-2 bg-black/20 rounded-3xl border border-white/5 overflow-x-auto max-w-full scrollbar-hide">
-                      {resultImages.map((img, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setSelectedIndex(idx)}
-                          className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${selectedIndex === idx ? 'border-orange-500 scale-105 shadow-lg' : 'border-transparent opacity-30 hover:opacity-100'}`}
-                        >
-                          <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
-                        </button>
-                      ))}
+                    <div className="bg-orange-500/10 text-orange-500 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-500/20">
+                      Foto Final em Qualidade Máxima
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-20 flex flex-col items-center">
-                    <div className="w-24 h-24 bg-white/[0.03] rounded-[2.5rem] flex items-center justify-center mb-8 border border-white/5 shadow-inner">
+                    <div className="w-24 h-24 bg-white/[0.03] rounded-[2.5rem] flex items-center justify-center mb-8 border border-white/5">
                       <i className="fas fa-magic text-4xl text-gray-800"></i>
                     </div>
-                    <h3 className="text-lg font-black uppercase tracking-[0.2em] text-gray-700 mb-3">Gerador Viral Shopee</h3>
+                    <h3 className="text-lg font-black uppercase tracking-[0.2em] text-gray-700 mb-3">Estúdio Viral Shopee</h3>
                     <p className="text-sm text-gray-500 max-w-[300px] mx-auto leading-relaxed">
-                      Carregue a foto do seu produto e deixe nossa IA criar fotos profissionais prontas para vender.
+                      Sua foto original será ambientada em um cenário de luxo para aumentar suas vendas.
                     </p>
                   </div>
                 )}
@@ -196,10 +184,10 @@ const App: React.FC = () => {
                 <div className="p-6 bg-[#12141c]/50 border-t border-white/5">
                   <a 
                     href={resultImages[selectedIndex]} 
-                    download={`shopee-viral-${selectedIndex}.png`}
-                    className="w-full bg-orange-600 text-white font-black py-5 rounded-[1.5rem] text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all hover:bg-orange-500 active:scale-[0.98]"
+                    download={`shopee-viral.png`}
+                    className="w-full bg-orange-600 text-white font-black py-5 rounded-[1.5rem] text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all hover:bg-orange-500"
                   >
-                    <i className="fas fa-download"></i> Baixar Foto em Alta Resolução
+                    <i className="fas fa-download"></i> Baixar em HD
                   </a>
                 </div>
               )}
@@ -208,23 +196,11 @@ const App: React.FC = () => {
         </div>
 
         {error && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-4 rounded-2xl font-bold text-sm shadow-2xl animate-fade-in z-[100] border border-red-400/20">
-            <i className="fas fa-circle-exclamation mr-3"></i> {error}
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-4 rounded-2xl font-bold text-sm shadow-2xl animate-fade-in z-[100] flex items-center gap-3">
+            <i className="fas fa-circle-exclamation"></i> {error}
           </div>
         )}
       </main>
-
-      <footer className="mt-auto py-10 px-6 border-t border-white/5 bg-[#050608]/50">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 opacity-40">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em]">ViralMaker IA &copy; 2025</span>
-          </div>
-          <div className="flex gap-8 text-[9px] font-black uppercase tracking-widest">
-            <span>Processamento Instantâneo</span>
-            <span>Qualidade Profissional</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
