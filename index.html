@@ -1,30 +1,37 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopee Viral Maker - IA de Fotos</title>
+    <meta name="theme-color" content="#050608">
+    <meta name="description" content="Transforme fotos simples em anúncios profissionais de alta conversão para Shopee com IA.">
+    <title>Shopee Viral Maker | IA de Vendas</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script>
       window.process = window.process || {};
       window.process.env = window.process.env || {};
       window.process.nextTick = window.process.nextTick || function(cb) { setTimeout(cb, 0); };
     </script>
+    
     <style>
+        :root { --shopee-orange: #ee4d2d; }
         body { 
           font-family: 'Inter', sans-serif; 
           background-color: #050608;
-          color: white;
+          color: #fafafa;
           margin: 0;
-          overflow-x: hidden;
+          -webkit-font-smoothing: antialiased;
         }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .shopee-gradient { background: linear-gradient(135deg, #f53d2d 0%, #ff6433 100%); }
+        @keyframes shine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        .animate-shine { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); background-size: 200% 100%; animation: shine 2s infinite; }
     </style>
+    
     <script type="importmap">
 {
   "imports": {

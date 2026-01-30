@@ -3,19 +3,18 @@ import { GenerationStatus } from './types';
 import { generateStagedImages, StagingConfig } from './services/geminiService';
 
 const ENVIRONMENTS = [
-  { id: 'auto', label: 'Automático', desc: 'IA inteligente', icon: 'fa-robot' },
-  { id: 'luxury_living', label: 'Sala Luxo', desc: 'Sofisticado', icon: 'fa-couch' },
-  { id: 'minimal_studio', label: 'Estúdio', desc: 'Clean', icon: 'fa-camera-retro' },
-  { id: 'nature_zen', label: 'Zen', desc: 'Natural', icon: 'fa-leaf' },
-  { id: 'tech_office', label: 'Escritório', desc: 'Moderno', icon: 'fa-laptop' },
-  { id: 'scandinavian', label: 'Escandinavo', desc: 'Suave', icon: 'fa-sun' },
+  { id: 'auto', label: 'Estúdio IA', desc: 'Minimalista', icon: 'fa-wand-sparkles' },
+  { id: 'modern_living', label: 'Home Decor', desc: 'Sofisticado', icon: 'fa-house-chimney' },
+  { id: 'professional_office', label: 'Corporativo', desc: 'Moderno', icon: 'fa-briefcase' },
+  { id: 'nature_outdoor', label: 'Ar Livre', desc: 'Natural', icon: 'fa-leaf' },
+  { id: 'lux_background', label: 'Luxo', desc: 'Premium', icon: 'fa-gem' },
+  { id: 'tech_setup', label: 'Gamer/Tech', desc: 'Neon', icon: 'fa-gamepad' },
 ];
 
 const App: React.FC = () => {
   const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [status, setStatus] = useState<GenerationStatus>(GenerationStatus.IDLE);
   const [resultImages, setResultImages] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [selectedEnv, setSelectedEnv] = useState(ENVIRONMENTS[0]);
 
@@ -23,7 +22,7 @@ const App: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 4 * 1024 * 1024) {
-        setError("Imagem muito grande. Use fotos de até 4MB.");
+        setError("A imagem deve ter no máximo 4MB.");
         return;
       }
       const reader = new FileReader();
@@ -37,7 +36,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleGenerateImages = async () => {
+  const handleGenerate = async () => {
     if (!sourceImage) return;
 
     try {
@@ -46,160 +45,158 @@ const App: React.FC = () => {
       
       const config: StagingConfig = {
         environment: selectedEnv.label,
-        lighting: "Cinematográfica Suave",
-        style: "Fotografia Publicitária Profissional"
+        lighting: "Suave e Profissional",
+        style: "Fotografia Publicitária Realista"
       };
       
       const results = await generateStagedImages(sourceImage, config);
       setResultImages(results);
-      setSelectedIndex(0);
       setStatus(GenerationStatus.SUCCESS);
     } catch (err: any) {
-      console.error("Falha na geração:", err);
-      setError("Houve um erro ao processar sua imagem. Tente novamente em instantes.");
+      console.error(err);
+      setError("Não foi possível gerar a imagem. Verifique sua conexão e tente novamente.");
       setStatus(GenerationStatus.ERROR);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white flex flex-col font-sans selection:bg-orange-500/30">
-      <header className="border-b border-white/5 bg-[#050608]/95 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20">
-              <i className="fas fa-magic text-xs text-white"></i>
+    <div className="min-h-screen flex flex-col antialiased">
+      {/* Navbar Minimalista */}
+      <nav className="h-14 border-b border-white/5 bg-black/50 backdrop-blur-md sticky top-0 z-50 flex items-center px-6">
+        <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 shopee-gradient rounded-lg flex items-center justify-center shadow-lg">
+              <i className="fas fa-camera text-xs text-white"></i>
             </div>
-            <h1 className="text-xl font-black tracking-tighter uppercase">
-              Shopee<span className="text-orange-500 italic">Viral</span>
-            </h1>
+            <span className="font-extrabold tracking-tight text-lg">Shopee<span className="text-orange-500 font-medium">Viral</span></span>
           </div>
-          
-          <div className="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">IA Conectada</span>
+          <div className="flex items-center gap-4">
+            <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+              Vercel Edge Ready
+            </span>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-5xl mx-auto p-6 w-full flex flex-col gap-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 flex flex-col gap-4">
-            <section className="bg-[#0f1117] p-5 rounded-3xl border border-white/5">
-              <h2 className="text-[10px] font-black uppercase text-gray-500 mb-4 tracking-widest flex items-center gap-2">
-                <i className="fas fa-upload text-orange-500"></i> 1. Foto do Produto
-              </h2>
-              <div className="relative">
-                {sourceImage ? (
-                  <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-orange-500/30 shadow-2xl">
-                    <img src={sourceImage} className="w-full h-full object-cover" alt="Original" />
-                    <button 
-                      onClick={() => { setSourceImage(null); setResultImages([]); }} 
-                      className="absolute top-2 right-2 w-8 h-8 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                    >
-                      <i className="fas fa-times"></i>
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Sidebar de Controle */}
+        <aside className="lg:col-span-4 space-y-6">
+          <div className="glass p-6 rounded-3xl space-y-6">
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 block">1. Upload do Produto</label>
+              {sourceImage ? (
+                <div className="relative group rounded-2xl overflow-hidden aspect-square border border-white/10">
+                  <img src={sourceImage} className="w-full h-full object-cover" alt="Source" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button onClick={() => setSourceImage(null)} className="p-3 bg-red-500 rounded-full hover:scale-110 transition-transform">
+                      <i className="fas fa-trash text-white"></i>
                     </button>
                   </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.02] hover:border-orange-500/50 hover:bg-white/[0.04] cursor-pointer transition-all group">
-                    <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <i className="fas fa-image text-gray-500 group-hover:text-orange-500"></i>
-                    </div>
-                    <span className="text-xs font-bold text-gray-500">Subir Produto</span>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                  </label>
-                )}
-              </div>
-            </section>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center aspect-square rounded-2xl border-2 border-dashed border-white/10 hover:border-orange-500/40 hover:bg-white/[0.02] transition-all cursor-pointer">
+                  <i className="fas fa-cloud-arrow-up text-3xl text-gray-600 mb-4"></i>
+                  <span className="text-xs font-medium text-gray-500">Arraste ou clique para subir</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                </label>
+              )}
+            </div>
 
-            <section className="bg-[#0f1117] p-5 rounded-3xl border border-white/5">
-              <h2 className="text-[10px] font-black uppercase text-gray-500 mb-4 tracking-widest flex items-center gap-2">
-                <i className="fas fa-wand-magic-sparkles text-orange-500"></i> 2. Cenário IA
-              </h2>
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 block">2. Estilo de Fundo</label>
               <div className="grid grid-cols-2 gap-2">
                 {ENVIRONMENTS.map((env) => (
                   <button
                     key={env.id}
                     onClick={() => setSelectedEnv(env)}
-                    className={`p-3 rounded-2xl border text-[11px] font-bold transition-all flex flex-col items-center gap-2 ${
+                    className={`p-3 rounded-xl border text-[11px] font-semibold transition-all flex flex-col items-center gap-2 ${
                       selectedEnv.id === env.id 
-                      ? 'bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20' 
-                      : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
+                      ? 'bg-orange-600 border-orange-500 text-white' 
+                      : 'glass hover:bg-white/5 border-white/5 text-gray-400'
                     }`}
                   >
-                    <i className={`fas ${env.icon} text-sm`}></i>
+                    <i className={`fas ${env.icon}`}></i>
                     {env.label}
                   </button>
                 ))}
               </div>
-            </section>
+            </div>
 
             <button
-              onClick={handleGenerateImages}
+              onClick={handleGenerate}
               disabled={!sourceImage || status === GenerationStatus.GENERATING_IMAGE}
-              className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all ${
+              className={`w-full py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${
                 !sourceImage || status === GenerationStatus.GENERATING_IMAGE
-                ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                : 'bg-white text-black hover:bg-orange-500 hover:text-white transform active:scale-95 shadow-xl'
+                ? 'bg-white/5 text-gray-600 cursor-not-allowed'
+                : 'shopee-gradient text-white hover:opacity-90 active:scale-[0.98] shadow-2xl shadow-orange-600/20'
               }`}
             >
               {status === GenerationStatus.GENERATING_IMAGE ? (
                 <span className="flex items-center justify-center gap-3">
-                  <i className="fas fa-circle-notch fa-spin"></i> Criando...
+                  <i className="fas fa-spinner fa-spin"></i> Criando Magia...
                 </span>
-              ) : "Gerar Foto Profissional"}
+              ) : "Transformar Foto"}
             </button>
           </div>
+        </aside>
 
-          <div className="lg:col-span-8">
-            <div className="bg-[#0f1117] rounded-[2.5rem] border border-white/5 h-full min-h-[550px] flex flex-col overflow-hidden relative shadow-2xl">
-              <div className="flex-1 flex flex-col items-center justify-center p-8">
-                {resultImages.length > 0 ? (
-                  <div className="w-full flex flex-col items-center gap-8 animate-fade-in">
-                    <div className="relative w-full max-w-[450px] group">
-                      <img 
-                        src={resultImages[selectedIndex]} 
-                        className="w-full h-auto rounded-[2rem] shadow-2xl border border-white/10" 
-                        alt="Resultado" 
-                      />
-                    </div>
-                    <div className="bg-orange-500/10 text-orange-500 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-500/20 flex items-center gap-3">
-                      <i className="fas fa-check-circle"></i> Imagem Gerada com IA
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-20 flex flex-col items-center">
-                    <div className="w-24 h-24 bg-white/[0.03] rounded-[2.5rem] flex items-center justify-center mb-8 border border-white/5">
-                      <i className="fas fa-star text-4xl text-gray-800"></i>
-                    </div>
-                    <h3 className="text-lg font-black uppercase tracking-[0.2em] text-gray-700 mb-3">Estúdio Shopee Viral</h3>
-                    <p className="text-sm text-gray-500 max-w-[300px] mx-auto leading-relaxed">
-                      Sua foto original será ambientada em um cenário profissional para aumentar suas vendas.
-                    </p>
-                  </div>
-                )}
+        {/* Preview Principal */}
+        <section className="lg:col-span-8">
+          <div className="glass rounded-[2.5rem] min-h-[600px] flex flex-col relative overflow-hidden group">
+            {status === GenerationStatus.GENERATING_IMAGE && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-pulse">
+                <div className="w-16 h-1 w-32 bg-white/10 rounded-full overflow-hidden mb-4">
+                  <div className="h-full bg-orange-500 animate-shine" style={{width: '100%'}}></div>
+                </div>
+                <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Processando IA...</span>
               </div>
+            )}
 
-              {resultImages.length > 0 && (
-                <div className="p-6 bg-[#12141c]/50 border-t border-white/5">
-                  <a 
-                    href={resultImages[selectedIndex]} 
-                    download={`shopee-viral.png`}
-                    className="w-full bg-orange-600 text-white font-black py-5 rounded-[1.5rem] text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all hover:bg-orange-500"
-                  >
-                    <i className="fas fa-download"></i> Baixar Foto Final
-                  </a>
+            <div className="flex-1 p-8 flex items-center justify-center">
+              {resultImages.length > 0 ? (
+                <div className="w-full max-w-2xl animate-fade-in text-center space-y-8">
+                  <img src={resultImages[0]} className="w-full h-auto rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/10" alt="Generated" />
+                  <div className="inline-flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-2 rounded-full text-[10px] font-bold uppercase border border-green-500/20">
+                    <i className="fas fa-check"></i> Pronto para postar
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-6">
+                  <div className="w-20 h-20 glass rounded-3xl mx-auto flex items-center justify-center">
+                    <i className="fas fa-images text-3xl text-gray-700"></i>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-bold">Aguardando seu produto</h3>
+                    <p className="text-sm text-gray-500 max-w-xs mx-auto">Suba uma foto e escolha um cenário para ver a mágica acontecer.</p>
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {error && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-4 rounded-2xl font-bold text-sm shadow-2xl animate-fade-in z-[100] flex items-center gap-3 border border-red-400/20">
-            <i className="fas fa-circle-exclamation"></i> {error}
+            {resultImages.length > 0 && (
+              <div className="p-8 border-t border-white/5 bg-black/20">
+                <a 
+                  href={resultImages[0]} 
+                  download="shopee-viral-pro.png"
+                  className="w-full bg-white text-black font-black py-4 rounded-2xl text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-500 hover:text-white transition-all shadow-xl"
+                >
+                  <i className="fas fa-download"></i> Baixar em Alta Resolução
+                </a>
+              </div>
+            )}
           </div>
-        )}
+        </section>
       </main>
+
+      {/* Erro Toast */}
+      {error && (
+        <div className="fixed bottom-6 right-6 glass border-red-500/30 bg-red-500/5 p-4 rounded-2xl flex items-center gap-4 animate-fade-in shadow-2xl">
+          <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white">
+            <i className="fas fa-exclamation text-xs"></i>
+          </div>
+          <span className="text-xs font-bold text-red-200">{error}</span>
+        </div>
+      )}
     </div>
   );
 };
